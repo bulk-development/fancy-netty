@@ -1,0 +1,19 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.8.0'
+}
+
+dependencies {
+    compileOnly rootProject
+//    implementation 'io.netty:netty-all:4.1.16.Final'
+}
+
+publishing {
+    publications {
+        version(MavenPublication) {
+            groupId group
+            artifactId 'fancy-netty-kotlin'
+            version version
+            it.from project.components['java']
+        }
+    }
+}

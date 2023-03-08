@@ -1,0 +1,49 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+}
+
+allprojects {
+    apply plugin: 'maven-publish'
+
+    repositories {
+        mavenCentral()
+    }
+
+    group 'ru.bulk'
+    version '1.0.0'
+
+    publishing {
+        repositories {
+            maven {
+                url 'https://repo.bulk.space/public'
+                allowInsecureProtocol true
+                credentials {
+                    username System.getenv('BULK_REPO_USER')
+                    password System.getenv('BULK_REPO_PASSWORD')
+                }
+            }
+
+        }
+    }
+
+    tasks.withType(JavaCompile)*.options*.encoding = 'UTF-8'
+}
+e
+dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+
+    implementation 'io.netty:netty-all:4.1.16.Final'
+}
+
+publishing {
+    publications {
+        version(MavenPublication) {
+            groupId group
+            artifactId 'fancy-netty'
+            version version
+            it.from project.components['java']
+        }
+    }
+}
