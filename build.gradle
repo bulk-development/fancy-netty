@@ -17,7 +17,6 @@ allprojects {
         repositories {
             maven {
                 url 'https://repo.bulk.space/public'
-                allowInsecureProtocol true
                 credentials {
                     username System.getenv('BULK_REPO_USER')
                     password System.getenv('BULK_REPO_PASSWORD')
