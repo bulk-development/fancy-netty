@@ -1,6 +1,6 @@
 package ru.bulk.fancy.remote;
 
-import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ public class FancyNettyRemote implements FancyRemote {
 
     protected final FancyBase parent;
     protected final FancyMetrics metrics;
-    protected final ChannelHandlerContext ctx;
+    protected final Channel channel;
 
     protected final FancyCallbackProvider callbackProvider;
     protected boolean throwInactive = false;
@@ -42,11 +42,11 @@ public class FancyNettyRemote implements FancyRemote {
     }
 
     public boolean isActive() {
-        return ctx.channel().isActive();
+        return channel.isActive();
     }
 
     public void close() {
-        if (isActive()) ctx.channel().close();
+        if (isActive()) channel.close();
     }
 
     @Override
@@ -55,7 +55,7 @@ public class FancyNettyRemote implements FancyRemote {
     }
 
     public InetSocketAddress getSocketAddress() {
-        return (InetSocketAddress) ctx.channel().remoteAddress();
+        return (InetSocketAddress) channel.remoteAddress();
     }
 
     @Override
@@ -71,7 +71,7 @@ public class FancyNettyRemote implements FancyRemote {
     @Override
     public <P extends FancyPacket> Callback<P> writeAwait(FancyPacket packet, UUID id, long timeout, Runnable timeoutHandler) {
         if (!isActive()) {
-            if (throwInactive) throw new FancyException("Remote inactive " + ctx);
+            if (throwInactive) throw new FancyException("Remote inactive " + channel);
             return null;
         }
 
@@ -81,7 +81,7 @@ public class FancyNettyRemote implements FancyRemote {
         val callback = getCallbackProvider().<P>create(this, packet.getUniqueId(), timeout, timeoutHandler);
 
         if (getRemoteHandler().handleOutPacket(this, callback, packet))
-            ctx.writeAndFlush(packet);
+            channel.writeAndFlush(packet);
 
         return callback;
     }

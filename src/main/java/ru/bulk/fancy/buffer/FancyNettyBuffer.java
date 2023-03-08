@@ -67,6 +67,16 @@ public class FancyNettyBuffer extends FancyBuffer {
     }
 
     @Override
+    public double readDouble() {
+        return this.handle.readDouble();
+    }
+
+    @Override
+    public void writeDouble(double val) {
+        this.handle.writeDouble(val);
+    }
+
+    @Override
     public byte[] readBytes() {
         byte[] bytes = new byte[readVarInt()];
         handle.readBytes(bytes);

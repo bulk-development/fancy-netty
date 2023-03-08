@@ -22,7 +22,7 @@ public class FancyHandler extends SimpleChannelInboundHandler<FancyPacket> {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         val channel = ctx.channel();
         val parent = channel.attr(FancyRemote.ATTRIBUTE_PARENT_KEY).get();
-        remote = new FancyNettyRemote(parent, parent.getMetrics().fork(), ctx, parent.getCallbackProvider());
+        remote = new FancyNettyRemote(parent, parent.getMetrics().fork(), ctx.channel(), parent.getCallbackProvider());
         channel.attr(FancyRemote.ATTRIBUTE_REMOTE_KEY).set(remote);
 
         channel.pipeline().addBefore("handler", "codec", new FancyCodec(remote));
@@ -40,7 +40,6 @@ public class FancyHandler extends SimpleChannelInboundHandler<FancyPacket> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FancyPacket packet) throws Exception {
-
         val callback = remote.getCallbackProvider().get(packet.getUniqueId());
 
         if (remote.getRemoteHandler().handleInPacket(remote, callback, packet)) {

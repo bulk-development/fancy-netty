@@ -1,5 +1,6 @@
 package ru.bulk.fancy;
 
+import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import ru.bulk.fancy.handler.FancyRemoteHandler;
 import ru.bulk.fancy.metrics.FancyMetrics;
@@ -23,6 +24,8 @@ public interface FancyBase {
     FancyRemoteHandler getRemoteHandler();
 
     EventLoopGroup getEventLoop();
+
+    Channel getChannel();
 
     InetSocketAddress getSocketAddress();
 

@@ -11,6 +11,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.ResourceLeakDetector;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.UtilityClass;
 
 import java.util.concurrent.ThreadFactory;
@@ -22,8 +23,8 @@ import java.util.logging.Logger;
 public class NettyUtil {
 
     public static int MAX_PACKET_LENGTH =
-            Integer.parseInt(System.getProperty("inmine.max.packet", String.valueOf(Integer.MAX_VALUE)));
-    public static int LOOP_GROUP_THREADS = Integer.parseInt(System.getProperty("inmine.threads.io", "2"));
+            Integer.parseInt(System.getProperty("fancy.packet.max", String.valueOf(Integer.MAX_VALUE)));
+    public static int LOOP_GROUP_THREADS = Integer.parseInt(System.getProperty("fancy.io.treads", "2"));
 
     public boolean EPOLL = Epoll.isAvailable();
 
@@ -53,21 +54,17 @@ public class NettyUtil {
         ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
     }
 
+    @RequiredArgsConstructor
     static class NamedThreadFactory implements ThreadFactory {
 
         private final String name;
         private final boolean daemon;
-        private final AtomicInteger counter;
 
-        public NamedThreadFactory(String name, boolean daemon) {
-            this.name = name;
-            this.daemon = daemon;
-            this.counter = new AtomicInteger(1);
-        }
+        private final AtomicInteger counter = new AtomicInteger(1);
 
         @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r);
+        public Thread newThread(Runnable runnable) {
+            Thread thread = new Thread(runnable);
             thread.setDaemon(daemon);
             thread.setName(name + counter.getAndIncrement());
             return thread;

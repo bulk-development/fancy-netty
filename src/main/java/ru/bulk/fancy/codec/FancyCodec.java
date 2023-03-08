@@ -45,7 +45,7 @@ public class FancyCodec extends ByteToMessageCodec<FancyPacket> {
         int length = 0;
         int lengthOfLength = 0;
 
-        {
+        validator: {
             byte in;
             do {
 
@@ -62,18 +62,17 @@ public class FancyCodec extends ByteToMessageCodec<FancyPacket> {
                     throw new DecoderException("Wrong packet length");
 
             } while ((in & 0x80) == 0x80);
-        }
 
-        if (length < 0)
-            throw new DecoderException("Packet length must be >= 0, received " + length);
+            if (length < 0)
+                throw new DecoderException("Packet length must be >= 0, received " + length);
 
-        if (length > NettyUtil.MAX_PACKET_LENGTH)
-            throw new DecoderException("Maximum allowed packet length is " + NettyUtil.MAX_PACKET_LENGTH + ", received " + length);
+            if (length > NettyUtil.MAX_PACKET_LENGTH)
+                throw new DecoderException("Maximum allowed packet length is " + NettyUtil.MAX_PACKET_LENGTH + ", received " + length);
 
-        // Пакет пришел не полностью
-        if (buf.readableBytes() < length) {
-            buf.readerIndex(readerIndex);
-            return;
+            if (buf.readableBytes() < length) {
+                buf.readerIndex(readerIndex);
+                return;
+            }
         }
 
         val buffer = new FancyNettyBuffer(buf);
@@ -91,7 +90,6 @@ public class FancyCodec extends ByteToMessageCodec<FancyPacket> {
         try {
             packet.read(buffer);
 
-            // Если не считаны все байты
             if (buf.readerIndex() - readerIndex != length) {
                 int diff = length - (buf.readerIndex() - readerIndex);
                 remote.getLogger().warning(
@@ -106,10 +104,9 @@ public class FancyCodec extends ByteToMessageCodec<FancyPacket> {
             throw new DecoderException("Decoding packet " + packet.getClass().getSimpleName() + ", size " + length, ex);
         }
 
-        remote.getMetrics().incrementInPackets(length + lengthOfLength);
-
         out.add(packet);
-//        buf.release();
+
+        remote.getMetrics().incrementInPackets(length + lengthOfLength);
     }
 
 }

@@ -114,7 +114,9 @@ public class FancyNettyClient implements FancyClient {
     }
 
     public void close() {
-        if (!isActive()) return;
+        if (!isActive())
+            return;
+
         remote.close();
     }
 
@@ -125,6 +127,11 @@ public class FancyNettyClient implements FancyClient {
     @Override
     public FancyBase getParent() {
         return null;
+    }
+
+    @Override
+    public Channel getChannel() {
+        return isActive() ? remote.getChannel(): null;
     }
 
     @Override

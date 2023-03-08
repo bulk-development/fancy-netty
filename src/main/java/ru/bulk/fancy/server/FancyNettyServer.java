@@ -1,10 +1,7 @@
 package ru.bulk.fancy.server;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import lombok.Data;
 import lombok.SneakyThrows;
@@ -90,7 +87,7 @@ public class FancyNettyServer implements FancyServer {
     public void close() {
         if (isActive()) {
             remotes.forEach(FancyRemote::close);
-            channelFuture.sync().channel().close();
+            getChannel().close();
             channelFuture = null;
             logger.info("Server on *:" + port + " closed");
         }
@@ -146,6 +143,12 @@ public class FancyNettyServer implements FancyServer {
     @Override
     public FancyCallbackProvider getCallbackProvider() {
         return new FancyCallbackProvider();
+    }
+
+    @Override
+    @SneakyThrows
+    public Channel getChannel() {
+        return channelFuture.sync().channel();
     }
 
 }

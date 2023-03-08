@@ -1,5 +1,6 @@
 package ru.bulk.fancy.buffer;
 
+import lombok.val;
 import ru.bulk.fancy.util.UnsafeUtil;
 
 import java.nio.charset.StandardCharsets;
@@ -34,6 +35,10 @@ public abstract class FancyBuffer {
     public abstract float readFloat();
 
     public abstract void writeFloat(float val);
+
+    public abstract double readDouble();
+
+    public abstract void writeDouble(double val);
 
     public boolean readBoolean() {
         return readByte() == (byte) 1;
@@ -71,9 +76,6 @@ public abstract class FancyBuffer {
         return result;
     }
 
-    /**
-     * Writes an unsigned varint
-     */
     public void writeVarInt(int val) {
         while (true) {
             int bits = val & 0x7f;
@@ -86,31 +88,18 @@ public abstract class FancyBuffer {
         }
     }
 
-    /**
-     * Writes a signed varint
-     */
-    @SuppressWarnings("NumericOverflow")
     public int readSignedVarInt() {
         int raw = readVarInt();
-        // This undoes the trick in writeSignedVarInt()
+
         int temp = (((raw << 31) >> 31) ^ raw) >> 1;
-        // This extra step lets us deal with the largest signed values by treating
-        // negative results from read unsigned methods as like unsigned values.
-        // Must re-flip the top bit if the original read value had it set.
+
         return temp ^ (raw & (1 << 31));
     }
 
-    /**
-     * Reads a signed varint
-     */
     public void writeSignedVarInt(int val) {
-        // Great trick from http://code.google.com/apis/protocolbuffers/docs/encoding.html#types
         writeVarInt((val << 1) ^ (val >> 31));
     }
 
-    /**
-     * Reads an unsigned varlong
-     */
     public long readVarLong() {
         long value = 0;
         byte temp;
@@ -123,9 +112,6 @@ public abstract class FancyBuffer {
         return value;
     }
 
-    /**
-     * Writes an unsigned varlong
-     */
     public void writeVarLong(long l) {
         byte temp;
         do {
@@ -137,25 +123,15 @@ public abstract class FancyBuffer {
         } while (l != 0);
     }
 
-    /**
-     * Reads a signed varlong
-     */
-    @SuppressWarnings("NumericOverflow")
     public long readSignedVarLong() {
         long raw = readVarLong();
-        // This undoes the trick in writeSignedVarInt()
+
         long temp = (((raw << 63) >> 63) ^ raw) >> 1;
-        // This extra step lets us deal with the largest signed values by treating
-        // negative results from read unsigned methods as like unsigned values.
-        // Must re-flip the top bit if the original read value had it set.
+
         return temp ^ (raw & (1L << 63));
     }
 
-    /**
-     * Writes a signed varlong
-     */
     public void writeSignedVarLong(long val) {
-        // Great trick from http://code.google.com/apis/protocolbuffers/docs/encoding.html#types
         writeVarLong((val << 1) ^ (val >> 63));
     }
 
@@ -169,16 +145,11 @@ public abstract class FancyBuffer {
     }
 
     public String readStringNullable() {
-        if (readBoolean())
-            return readString();
-        return null;
+        return readNullable(this::readString);
     }
 
     public void writeStringNullable(String s) {
-        writeBoolean(s != null);
-        if (s != null) {
-            writeString(s);
-        }
+        writeNullable(s, this::writeString);
     }
 
     public <E extends Enum<E>> E readEnum(Class<E> clazz) {
@@ -234,14 +205,11 @@ public abstract class FancyBuffer {
     }
 
     public void writeUUIDNullable(UUID uuid) {
-        writeBoolean(uuid != null);
-        if (uuid != null) writeUUID(uuid);
+        writeNullable(uuid, this::writeUUID);
     }
 
     public UUID readUUIDNullable() {
-        if (readBoolean())
-            return readUUID();
-        return null;
+        return readNullable(this::readUUID);
     }
 
     public void writeObject(FancySerializable object) {
@@ -258,8 +226,7 @@ public abstract class FancyBuffer {
     }
 
     public void writeObjectNullable(FancySerializable object) {
-        writeBoolean(object != null);
-        if (object != null) writeObject(object);
+        writeNullable(object, this::writeObject);
     }
 
     public <T extends FancySerializable> T readObjectNullable(T object, boolean nullIfNotPresent) {
@@ -274,7 +241,25 @@ public abstract class FancyBuffer {
     }
 
     public <T extends FancySerializable> T readObjectNullable(Class<T> objectClass) {
-        return readBoolean() ? readObject(UnsafeUtil.allocateInstance(objectClass)) : null;
+        return readNullable(() -> readObject(UnsafeUtil.allocateInstance(objectClass)));
+    }
+
+    public <T> boolean writeNullable(T object, Consumer<T> writer) {
+        val state = object != null;
+
+        writeBoolean(state);
+        if (state)
+            writer.accept(object);
+
+        return state;
+    }
+
+    public <T> T readNullableOr(Supplier<T> reader, Supplier<T> defaultsTo) {
+        return readBoolean() ? reader.get() : defaultsTo.get();
+    }
+
+    public <T> T readNullable(Supplier<T> reader) {
+        return readBoolean() ? reader.get() : null;
     }
 
 }
